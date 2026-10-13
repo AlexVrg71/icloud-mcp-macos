@@ -1,31 +1,31 @@
 # iCloud MCP Reminders: EventKit
 
-macOS 14+, SwiftPM 5.9+, sin dependencias Swift externas. Productos: ejecutable `ICloudMCPReminders`, biblioteca `RemindersCore` y sus pruebas.
+macOS 14+, SwiftPM 5.9+, no external Swift dependencies. Products: the `ICloudMCPReminders` executable, the `RemindersCore` library, and its tests.
 
 ```sh
 swift test
 ./build-app.sh
 ```
 
-La app compilada está en `build/iCloud MCP Reminders.app`. Es una compilación de desarrollo con firma ad hoc `org.icloudmcp.macos.reminders`, sin notarización; compilar no la ejecuta. `--self-check` del ejecutable solo verifica el protocolo sin crear EKEventStore, pedir permiso ni abrir socket. No se debe ejecutar la app real durante CI.
+The built app is at `build/iCloud MCP Reminders.app`. It is an ad hoc signed development build with identity `org.icloudmcp.macos.reminders`, without notarization; building does not launch it. The executable's `--self-check` checks only the protocol without creating an EKEventStore, requesting permission, or opening a socket. Do not run the live app during CI.
 
-El proceso se integra mediante el instalador descrito en el [README principal](../README.md). Datos: `~/Library/Application Support/iCloud-MCP-macOS/data/eventkit`. Socket privado, mismo UID, MainActor, solicitudes serializadas y recibos duraderos. Ver [arquitectura](../docs/ARCHITECTURE.md) y [seguridad](../SECURITY.md).
+The process is integrated through the installer in the [main README](../README.md). Data: `~/Library/Application Support/iCloud-MCP-macOS/data/eventkit`. It uses a private socket, same-UID access, MainActor, serialized requests, and durable receipts. See [architecture](../docs/ARCHITECTURE.md) and [security](../SECURITY.md).
 
-Herramientas:
+Tools:
 
-| Nombre | Uso |
+| Name | Purpose |
 | --- | --- |
-| `reminders_get_status` | Conexión y permiso sin solicitarlos. |
-| `reminders_list_lists` | Lista/cuenta, clasificación, privacidad declarada y escritura. |
-| `reminders_list_reminders` | Buscar pendientes/completados, paginar explícitamente. |
-| `reminders_get_reminder` | Leer un elemento y su versión. |
-| `reminders_create_reminder` | Lista explícita, UUID, confirmación, título y aviso explícito. |
-| `reminders_update_reminder` | Cambios puntuales con versión; cambio de fecha requiere elegir aviso. |
-| `reminders_complete_reminder` | Establecer completado/pendiente, no alternar a ciegas. |
-| `reminders_delete_reminder` | Eliminar exactamente uno con instrucción explícita y versión. |
+| `reminders_get_status` | Check connection and permission without requesting access. |
+| `reminders_list_lists` | Read list/account identity, classification, declared sharing, and write access. |
+| `reminders_list_reminders` | Search pending/completed reminders with explicit pagination. |
+| `reminders_get_reminder` | Read one item and its version. |
+| `reminders_create_reminder` | Require an explicit list, UUID, confirmation, title, and explicit alert choice. |
+| `reminders_update_reminder` | Apply specific changes with a version; date changes require an alert choice. |
+| `reminders_complete_reminder` | Set completed/pending state rather than blindly toggling it. |
+| `reminders_delete_reminder` | Delete exactly one item with an explicit instruction and version. |
 
-Las fechas con hora requieren zona IANA. Se rechazan horas ambiguas/inexistentes por cambios de horario. Fecha sin hora no inventa un aviso. No se modifican recurrencias, listas, subtareas, etiquetas o adjuntos.
+Timed dates require an IANA time zone. Ambiguous or nonexistent times caused by clock changes are rejected. A date without a time does not imply an alert. Recurrences, lists, subtasks, tags, and attachments cannot be modified.
 
-Los controles de privacidad son locales y declarados por el propietario; no se debe describir una cuenta con nombre “iCloud” como verificada sin esa confirmación. Se puede leer lo accesible a EventKit, pero solo escribir listas confirmadas como iCloud. Desconocidas/compartidas/delegadas requieren permiso de visibilidad para colaboradores. Nunca conceder TCC desde una herramienta MCP.
+Privacy controls are local and declared by the owner; an account named “iCloud” must not be described as verified without that confirmation. The helper can read what EventKit exposes but can write only to lists confirmed as iCloud. Unknown/shared/delegated lists require permission acknowledging collaborator visibility. Never grant TCC permission from an MCP tool.
 
-`local_saved` no acredita sincronización o notificación. Los tres campos `sync_status`, `iphone_notification` y `watch_notification` permanecen `not_verified` desde el servidor; una confirmación humana de dispositivos se documenta por separado.
+`local_saved` does not prove synchronization or notification delivery. The server leaves `sync_status`, `iphone_notification`, and `watch_notification` as `not_verified`; human confirmation on devices is documented separately.

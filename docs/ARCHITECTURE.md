@@ -1,23 +1,24 @@
-# Arquitectura
+# Architecture
 
 ```text
-Cliente MCP local ── stdio ───────────────┐
-Cliente remoto ── HTTPS + OAuth ── proxy ├── servidor Python
-                                        ├── IMAP/SMTP: correo iCloud
-                                        ├── CalDAV: calendarios
-                                        ├── CardDAV: contactos + respaldos
-                                        └── socket Unix privado ── app Swift/EventKit
-                                                                    └── réplica macOS de Recordatorios
+Local MCP client ── stdio ────────────────┐
+Remote client ── HTTPS + OAuth ── proxy ──┤
+                                        └── Python server
+                                            ├── IMAP/SMTP: iCloud Mail
+                                            ├── CalDAV: calendars
+                                            ├── CardDAV: contacts + backups
+                                            └── private Unix socket ── Swift/EventKit app
+                                                                        └── macOS Reminders replica
 ```
 
-El repositorio conserva el paquete Python `icloud_mcp` y publica el nombre de distribución separado `icloud-mcp-macos`. El lanzador independiente construye el entorno desde una configuración explícita; evita heredar secretos, rutas o funciones de otra instalación.
+The repository retains the Python package `icloud_mcp` and uses the separate distribution name `icloud-mcp-macos`. Its independent launcher builds the environment from explicit configuration, avoiding inherited secrets, paths, or features from another installation.
 
-El auxiliar usa SwiftPM: biblioteca pura `RemindersCore`, ejecutable `ICloudMCPReminders` y pruebas `RemindersCoreTests`. `build-app.sh` crea el bundle AppKit, declara el motivo de acceso y firma ad hoc. No se abre durante compilación/tests. La utilidad `scripts/keychain.swift` solo guarda credenciales en los dos servicios de esta edición mediante Security.framework; se compila por separado y no solicita EventKit.
+The helper uses SwiftPM: the pure `RemindersCore` library, the `ICloudMCPReminders` executable, and `RemindersCoreTests`. `build-app.sh` creates the AppKit bundle, declares the permission purpose, and signs it ad hoc. The app is not opened during builds or tests. The `scripts/keychain.swift` utility stores credentials only in this edition's two Keychain services using Security.framework; it is compiled separately and does not request EventKit access.
 
-Identidad pública `org.icloudmcp.macos.reminders`; datos `~/Library/Application Support/iCloud-MCP-macOS/data/eventkit`. Servidor y auxiliar comparten ese valor derivado del HOME del usuario. La ruta del socket tiene el límite Unix de macOS; el instalador rechaza rutas demasiado largas. No cambia permisos de carpetas de otra instalación.
+The public identity is `org.icloudmcp.macos.reminders`; data lives at `~/Library/Application Support/iCloud-MCP-macOS/data/eventkit`. The server and helper derive this shared path from the user's home directory. The socket path is subject to the macOS Unix socket limit; the installer rejects overly long paths. It does not change permissions on another installation's directories.
 
-EventKit vive en MainActor. IPC serializa lectura y mutaciones. Un archivo de bloqueo excluye otro auxiliar; cada solicitud tiene un tamaño acotado y el servidor tiene timeout sin reintento automático. El registro de operaciones guarda el estado pendiente antes de escribir y el resultado después. Un fallo entre ambos deja resultado incierto que requiere conciliación manual.
+EventKit runs on MainActor. IPC serializes reads and mutations. A lock file excludes a second helper; requests have a bounded size and the server times out without automatic retries. The operation journal records pending state before writing and the result afterward. A failure between those steps leaves an uncertain result that requires manual reconciliation.
 
-Los permisos no se conceden remotamente ni al arrancar. El usuario selecciona listas en la app y guarda sus identificadores de cuenta/lista; si cambian, se exige selección nueva. La sincronización de Apple y la entrega de avisos son externas a la confirmación del guardado local.
+Permissions are not granted remotely or on startup. The user selects lists in the app and saves their account/list identifiers; changed identifiers require a new selection. Apple synchronization and notification delivery are separate from confirmation of a local save.
 
-Las modificaciones respecto al upstream incluyen corrección de prefijos OAuth, respaldos vCard, hilos entre carpetas, adjuntos temporales, división de recurrencias con recuperación e iMIP con deduplicación. El resto del núcleo permanece para evitar una refactorización ajena a la publicación.
+Changes from upstream include OAuth prefix handling, vCard backups, threads across folders, temporary attachments, recurrence splitting with recovery, and deduplicated iMIP replies. The remaining core is retained to avoid unrelated refactoring during publication.

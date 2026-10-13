@@ -57,8 +57,8 @@ import logging
 class DownloadTests(unittest.TestCase):
  def test_roundtrip_expiration_and_opaque_storage(self):
   with tempfile.TemporaryDirectory() as d:
-   store=DownloadStore(d);r=store.create(b'\x00binary\xff','prueba ñ.pdf','https://example.invalid/icloud');token=r['download_url'].rsplit('/',1)[1]
-   self.assertEqual(store.read(token),(b'\x00binary\xff','prueba ñ.pdf'))
+   store=DownloadStore(d);r=store.create(b'\x00binary\xff','sample résumé.pdf','https://example.invalid/icloud');token=r['download_url'].rsplit('/',1)[1]
+   self.assertEqual(store.read(token),(b'\x00binary\xff','sample résumé.pdf'))
    self.assertIsNone(store.read('../meta.json'))
    self.assertNotIn(token,' '.join(p.name for p in store.root.iterdir()))
    with patch('icloud_mcp.downloads.time.time',return_value=10**12):self.assertIsNone(store.read(token))

@@ -3,6 +3,7 @@ Upstream base commit: 7826ea335c7a6f85b0292b4a3a3e97b9ed5e5d08
 Upstream base version: 0.12.1
 Public fork distribution: icloud-mcp-macos 0.1.0b1
 License: MIT; preserve upstream copyright and THIRD_PARTY_NOTICES.md.
+Fork contributions: Copyright (c) 2026 AlexVrg71.
 
 Fork changes: OAuth/public URL prefix support; automatic contact/group vCard backups;
 all-folder transitive email threads; temporary attachment download capabilities;

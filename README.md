@@ -1,83 +1,83 @@
 # iCloud MCP for macOS — public beta
 
-Servidor MCP de un solo propietario para **correo, calendario, contactos y Recordatorios de Apple**. Se puede conectar a ChatGPT, Claude u otros clientes compatibles con MCP, con o sin Dot. No requiere un asistente personalizado. Cada persona lo instala en su propio Mac y conecta sus propias cuentas. GitHub distribuye el código; no aloja el servidor ni recibe las credenciales o los datos de iCloud.
+A single-owner MCP server for **iCloud Mail, Calendar, Contacts, and Apple Reminders**. Connect it to ChatGPT, Claude, or other MCP-compatible clients, with or without a Dot. No custom assistant is required. Each person installs it on their own Mac and connects their own accounts. GitHub distributes the source code; it does not host the server or receive iCloud credentials or data.
 
-Esta edición deriva de `epinethrone/icloud-mcp` 0.12.1 e incorpora mejoras locales. Ver [UPSTREAM.txt](UPSTREAM.txt), [LICENSE](LICENSE) y [avisos de terceros](THIRD_PARTY_NOTICES.md). No es un producto oficial de Apple, OpenAI ni Anthropic.
+This edition builds on `epinethrone/icloud-mcp` 0.12.1 with additional features. See [UPSTREAM.txt](UPSTREAM.txt), [LICENSE](LICENSE), and [third-party notices](THIRD_PARTY_NOTICES.md). It is not an official Apple, OpenAI, or Anthropic product.
 
-**Estado:** beta de código fuente. Probada automáticamente en el Mac de desarrollo. La instalación limpia en otro Mac se omitió por decisión del responsable; no se presenta como validada. El auxiliar lleva firma ad hoc, sin notarización. No se distribuye un instalador binario ni hay actualizaciones automáticas.
+**Status:** source-only beta. Automated checks have passed on the development Mac. A clean installation on another Mac was omitted by the maintainer's decision and has not been validated. The helper is ad hoc signed and not notarized. No binary installer or automatic updater is provided.
 
-## Funciones incluidas
+## Features
 
-- Correo IMAP/SMTP: buscar, leer, consultar hilos entre carpetas, marcar leído/no leído, gestionar borradores y enviar si se habilita. Los enlaces temporales de adjuntos son capacidades privadas: quien tenga el enlace puede descargar mientras sea válido.
-- Calendario CalDAV: consultar y modificar eventos, recurrencias y cambios desde una ocurrencia; respuestas a invitaciones. Las invitaciones deben existir en Calendario; no se importa automáticamente cualquier `.ics` recibido por correo.
-- Contactos CardDAV: consultar contactos y grupos; respaldos completos de vCard antes de mutaciones. Si el respaldo falla, se bloquea el cambio.
-- Recordatorios: auxiliar Swift/AppKit con **EventKit público**, permiso concedido localmente y socket Unix privado. Buscar pendientes/completados; crear, editar, completar/reabrir y eliminar uno con confirmación. Escrituras limitadas a listas identificadas localmente como iCloud.
+- IMAP/SMTP mail: search, read, follow threads across folders, mark read/unread, manage drafts, and send when enabled. Temporary attachment links grant download access to anyone holding the link until it expires; treat them as private.
+- CalDAV calendars: read and modify events, recurrences, and events from a selected occurrence onward; respond to invitations. Invitations must already exist in Calendar; arbitrary email `.ics` attachments are not automatically imported.
+- CardDAV contacts: read contacts and groups; create full vCard backups before mutations. If a backup fails, the change is blocked.
+- Reminders: a Swift/AppKit helper using **Apple's public EventKit API**, locally granted permission, and a private Unix socket. Search pending/completed reminders; create, edit, complete/reopen, or delete a specific reminder with confirmation. Writes are limited to lists locally identified as iCloud lists.
 
-No se instalan ni ofrecen en esta edición los auxiliares de Notas, Mensajes, Drive, Mapas, Salud o Shortcuts. Parte del código heredado permanece por compatibilidad interna, pero el lanzador fija esas funciones desactivadas y limita el catálogo.
+This edition does not install or expose the Notes, Messages, Drive, Maps, Health, or Shortcuts helpers. Some inherited code remains for internal compatibility, but the launcher disables those features and restricts the tool catalog.
 
-## Requisitos
+## Requirements
 
-- macOS 14 o posterior, sesión gráfica abierta para EventKit.
-- Python 3.11 o posterior (`python3 --version`) y Command Line Tools de Apple (`swift --version`). Si faltan, instalarlos desde Apple antes de continuar.
-- Cuenta de iCloud y contraseña específica de aplicación para correo/CalDAV/CardDAV. Recordatorios usa la cuenta sincronizada en macOS y el permiso EventKit, no esa contraseña.
-- Un cliente MCP. Los clientes locales pueden usar stdio. Un cliente en la nube necesita un endpoint HTTPS propio con OAuth y el Mac disponible.
+- macOS 14 or later, with a graphical user session signed in for EventKit.
+- Python 3.11 or later (`python3 --version`) and Apple Command Line Tools (`swift --version`). If missing, install the tools from Apple before proceeding.
+- An iCloud account and an app-specific password for Mail/CalDAV/CardDAV. Reminders uses the account synced on macOS and EventKit permission, not that password.
+- An MCP client. Local clients can use stdio. Cloud clients need your own HTTPS endpoint with OAuth and an available Mac.
 
-El instalador resuelve el directorio personal automáticamente; no requiere Homebrew ni un nombre de usuario fijo. Crea una instalación separada en `~/Library/Application Support/iCloud-MCP-macOS`, con identificadores y entradas de Keychain propios. No migra ni reemplaza otra instalación. Si el destino ya existe, se detiene.
+The installer resolves your home directory automatically; it requires neither Homebrew nor a fixed username. It creates a separate installation at `~/Library/Application Support/iCloud-MCP-macOS`, with its own identifiers and Keychain entries. It does not migrate or replace another installation. If the destination already exists, it stops.
 
-## Instalación local
+## Local installation
 
-Clona el [repositorio público](https://github.com/AlexVrg71/icloud-mcp-macos) y revisa los scripts antes de ejecutarlos:
+Clone the [public repository](https://github.com/AlexVrg71/icloud-mcp-macos) and review the scripts before running them:
 
 ```sh
 git clone https://github.com/AlexVrg71/icloud-mcp-macos.git
 cd icloud-mcp-macos
 ```
 
-Instala desde esa carpeta:
+Install from that directory:
 
 ```sh
 python3 scripts/manage.py install --enable-reminders
 python3 scripts/manage.py configure --enable-reminders
 ```
 
-El primer comando crea el entorno Python, instala dependencias con `constraints.txt` y compila el auxiliar. **No arranca servicios ni concede permisos.** El segundo pide la cuenta, zona IANA y contraseña específica de aplicación dos veces, con entrada oculta. Los secretos se guardan como elementos genéricos del Keychain de macOS; no necesariamente aparecen en la app Contraseñas. No los pegues en un chat, argumentos de shell, issues o archivos de configuración.
+The first command creates the Python environment, installs dependencies using `constraints.txt`, and builds the helper. **It does not start services or grant permissions.** The second prompts for your account, IANA time zone, and app-specific password, entered twice with hidden input. Secrets are stored as generic macOS Keychain items; they may not appear in the Passwords app. Do not paste them into chats, shell arguments, issues, or configuration files.
 
-El modo inicial es **solo lectura**. Para habilitar modificaciones desde el principio, agrega `--allow-writes` al comando `configure`. Los envíos y las invitaciones requieren, por separado, `--allow-send` y `--allow-invites`. La eliminación permanente de correo permanece desactivada.
+The default mode is **read-only**. To enable changes during setup, add `--allow-writes` to `configure`. Sending mail and calendar invitations separately require `--allow-send` and `--allow-invites`. Permanent mail deletion remains disabled.
 
-Para Recordatorios, cuando decidas activar el acceso persistente:
+When you are ready to enable persistent Reminders access:
 
 ```sh
 python3 scripts/manage.py start --helper
 python3 scripts/manage.py open-reminders
 ```
 
-En la ventana local, solicita acceso y acepta el diálogo de macOS. Selecciona cada lista, confirma que pertenece a iCloud, identifica su privacidad y guarda. No hace falta crear un recordatorio. El permiso de Apple cubre todas las listas; el auxiliar restringe las escrituras. Las etiquetas iCloud/privada/compartida proceden del propietario, pues EventKit no permite demostrar automáticamente todos esos casos.
+In the local window, request access and accept the macOS prompt. Select each list, confirm that it belongs to iCloud, identify its sharing status, and save. You do not need to create a reminder. Apple's permission covers all lists; the helper restricts writes. The iCloud/private/shared labels are supplied by the owner because EventKit cannot automatically verify all of these classifications.
 
-Genera la configuración para un cliente local:
+Generate the configuration for a local client:
 
 ```sh
 python3 scripts/manage.py client-config
 ```
 
-Copia ese JSON a la configuración MCP de tu cliente. Usa stdio sin puerto público ni OAuth; stdout queda reservado al protocolo. Un cliente local con acceso al proceso queda dentro del límite de confianza de tu sesión. La configuración contiene rutas locales, pero no contraseñas: no publiques tu JSON generado.
+Copy that JSON into your client's MCP configuration. It uses stdio without a public port or OAuth; stdout is reserved for the protocol. A local client with access to the process is trusted within your user session. The configuration contains local paths but no passwords: do not publish your generated JSON.
 
-Para ChatGPT, Claude u otro cliente MCP en la nube, sigue [conexión HTTPS y OAuth](docs/REMOTE.md). No uses el endpoint de otra persona.
+For ChatGPT, Claude, or another cloud MCP client, follow the [HTTPS and OAuth setup](docs/REMOTE.md). Do not use someone else's endpoint.
 
-## Aprobaciones
+## Approvals
 
-Configura el cliente para aprobar escrituras. Una instrucción explícita e inequívoca autoriza su operación concreta; un ejemplo o texto de un correo no lo hace. Las herramientas de Recordatorios exigen `confirmed=true`, identificadores y versiones cuando corresponde. Este booleano es una declaración del agente, **no una prueba independiente de aprobación humana**.
+Configure the client to approve writes. An explicit, unambiguous instruction authorizes that specific operation; an example or text inside an email does not. Reminders tools require `confirmed=true`, identifiers, and versions where applicable. This boolean is an agent assertion, **not independent proof of human approval**.
 
-Por defecto los envíos habilitados usan una página de aprobación en HTTP. `--chat-approvals` permite confiar en la aprobación del cliente sin esa página; úsalo solo después de configurar el cliente y comprender que no hay otra aprobación independiente en el servidor. En stdio no hay página web: los envíos habilitados dependen del cliente. Ver [seguridad](SECURITY.md).
+By default, enabled mail sends use an approval page over the HTTP transport. `--chat-approvals` trusts the client's approval without that page; use it only after configuring the client and understanding that the server provides no separate approval in this mode. Stdio has no web approval page: enabled sends rely on the client. See [security](SECURITY.md).
 
-## Verificación y límites
+## Verification and limitations
 
-`icloud_check_health` comprueba las cuatro áreas habilitadas. `reminders_get_status` no solicita permisos. Después de modificar la configuración, reinicia los procesos de esta edición y actualiza el catálogo de herramientas en el cliente.
+`icloud_check_health` checks the four supported areas when enabled. `reminders_get_status` does not request permissions. After changing configuration, restart this edition's processes and refresh the client's tool catalog.
 
-En Recordatorios, `local_saved=true` acredita guardado en el Mac. La aparición del mismo elemento en iPhone/Watch y el aviso en el dispositivo deben verificarse por separado. El servidor no recibe comprobantes de Apple para esos resultados. No repitas una creación con un UUID nuevo ante un timeout: podría duplicarla.
+For Reminders, `local_saved=true` confirms a save on the Mac. The same item's appearance on iPhone/Watch and its notification on a device must be verified separately. The server receives no Apple delivery receipts for those outcomes. Do not retry a creation with a new UUID after a timeout: that could create a duplicate.
 
-No se permite modificar recordatorios recurrentes; sí leerlos. No se crean listas, subtareas, etiquetas ni adjuntos. EventKit no ofrece edición condicional atómica entre dispositivos. Si el Mac está desconectado, una escritura local puede esperar a sincronizarse; si el Mac está apagado, el MCP remoto no estará disponible.
+Recurring reminders can be read but cannot be modified. List creation, subtasks, tags, and attachments are not supported. EventKit does not offer atomic conditional edits across devices. If the Mac is offline, a local write may wait to sync; if the Mac is off, the remote MCP server is unavailable.
 
-## Desarrollo y mantenimiento
+## Development and maintenance
 
 ```sh
 python3 -m venv .venv
@@ -89,4 +89,4 @@ PYTHONPATH=src .venv/bin/python scripts/check_http.py
 python3 scripts/check_public_tree.py
 ```
 
-Las pruebas son sintéticas; no requieren credenciales, EventKit ni servicios reales. `swift test` prueba la biblioteca pura. Compilar la app no ejecuta el auxiliar. No ejecutes el servidor real durante las pruebas. Los detalles de [operación, respaldo y retirada](docs/OPERATIONS.md), [arquitectura](docs/ARCHITECTURE.md) y [preparación de publicación](docs/RELEASE.md) están separados.
+Tests use synthetic data and require no credentials, EventKit access, or live services. `swift test` tests the pure library. Building the app does not launch the helper. Do not run the live server during tests. See [operations, backups, and removal](docs/OPERATIONS.md), [architecture](docs/ARCHITECTURE.md), and [release preparation](docs/RELEASE.md) for details.

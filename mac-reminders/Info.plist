@@ -10,6 +10,6 @@
 <key>CFBundleShortVersionString</key><string>1.0.0</string>
 <key>LSMinimumSystemVersion</key><string>14.0</string>
 <key>LSUIElement</key><true/>
-<key>NSRemindersFullAccessUsageDescription</key><string>iCloud MCP necesita leer y gestionar tus recordatorios cuando se lo pides en el chat. Los cambios se limitan a las listas que identifiques como iCloud.</string>
-<key>NSRemindersUsageDescription</key><string>iCloud MCP necesita leer y gestionar tus recordatorios cuando se lo pides en el chat.</string>
+<key>NSRemindersFullAccessUsageDescription</key><string>iCloud MCP needs to read and manage your reminders when you request it in chat. Changes are limited to lists you identify as iCloud.</string>
+<key>NSRemindersUsageDescription</key><string>iCloud MCP needs to read and manage your reminders when you request it in chat.</string>
 </dict></plist>

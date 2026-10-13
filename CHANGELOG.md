@@ -1,13 +1,14 @@
 # Changelog
 
-## 0.1.0b1 — beta pública de código fuente
+## 0.1.0b1 — public source beta
 
-- Nombre independiente: iCloud MCP for macOS (`icloud-mcp-macos`), para clientes MCP con o sin Dot.
-- Snapshot del fork de iCloud MCP 0.12.1 con correo, calendario, contactos y EventKit Reminders.
-- Instalador macOS relativo al usuario, aislado de otros despliegues, sin activación automática.
-- Credenciales en Keychain mediante utilidad Security.framework y stdin privado.
-- Inicio en solo lectura; envíos, invitaciones, Recordatorios y aprobación exclusiva del chat requieren opciones explícitas.
-- Documentación en español, límites de seguridad y procedimientos de mantenimiento/retirada.
-- Pruebas sintéticas, workflow de CI sin secretos y comprobación de higiene para fuentes públicas.
+- Independent name: iCloud MCP for macOS (`icloud-mcp-macos`), for MCP clients with or without a Dot.
+- Snapshot of the iCloud MCP 0.12.1 fork with Mail, Calendar, Contacts, and EventKit Reminders.
+- Portable macOS installer using the current user's home directory, isolated from other deployments, with no automatic activation.
+- Keychain credentials stored through a Security.framework utility and private stdin.
+- Read-only defaults; sending, invitations, Reminders, and chat-only approval require explicit options.
+- English documentation and helper UI, security limitations, and maintenance/removal procedures.
+- Synthetic tests, a CI workflow without secrets, and a public-source hygiene check.
+- Preserved upstream attribution and added credit for AlexVrg71's fork contributions.
 
-Sin instalación limpia en otro Mac, sin notarización, sin publicación en PyPI ni pruebas nuevas sobre cuentas reales.
+No clean installation on another Mac, notarization, PyPI release, or new tests against real accounts have been performed for this public edition.

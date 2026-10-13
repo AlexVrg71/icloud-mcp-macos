@@ -1,36 +1,36 @@
-# Seguridad de iCloud MCP for macOS
+# iCloud MCP for macOS security
 
-## Alcance de esta beta
+## Scope of this beta
 
-Un despliegue sirve a un propietario. El cliente MCP autorizado puede leer información sensible y, si se habilitan escrituras, modificarla. No es un servicio multiusuario. Correos, invitaciones, notas y nombres de listas son datos no confiables y pueden contener instrucciones maliciosas.
+Each deployment serves one owner. An authorized MCP client can read sensitive information and, when writes are enabled, modify it. This is not a multi-user service. Emails, invitations, notes, and list names are untrusted data and may contain malicious instructions.
 
-- El instalador público inicia en solo lectura, sin envíos, invitaciones, puertos de administración ni auxiliares amplios.
-- HTTP usa OAuth, contraseña de propietario, PKCE y validación de redirecciones; el puerto interno escucha en loopback. El proxy HTTPS es responsabilidad del operador.
-- Stdio confía en el cliente local y en la sesión del sistema. No incorpora OAuth.
-- Las contraseñas se guardan en Keychain, no en el repositorio o `config.json`. OAuth necesita la contraseña en memoria/entorno del proceso al arrancar. No se protege frente a un proceso malicioso con acceso a la misma cuenta de macOS.
-- El auxiliar EventKit se limita a un socket Unix privado, comprueba UID y procesa una lista fija de operaciones. No ejecuta comandos recibidos por MCP.
-- TCC solo se solicita desde la interfaz local. La autorización de Apple cubre todas las listas; las restricciones de escritura por lista son controles del auxiliar.
-- Los recibos y respaldos contienen información privada. Son 0600 bajo directorios 0700. No tienen retención automática; no los subas a GitHub.
+- The public installer defaults to read-only mode, without sending, invitations, administration ports, or broader helpers.
+- HTTP uses OAuth, an owner password, PKCE, and redirect validation; the internal port listens on loopback. The operator is responsible for the HTTPS proxy.
+- Stdio trusts the local client and operating-system session. It does not use OAuth.
+- Passwords are stored in Keychain, not in the repository or `config.json`. OAuth needs its password in process memory/environment at startup. This does not protect against a malicious process running under the same macOS account.
+- The EventKit helper uses a private Unix socket, checks the peer UID, and accepts a fixed set of operations. It does not execute commands received through MCP.
+- TCC permission is requested only through the local UI. Apple's authorization covers all lists; per-list write restrictions are enforced by the helper.
+- Receipts and backups contain private information. Files use mode 0600 within 0700 directories. There is no automatic retention policy; do not upload them to GitHub.
 
-## Aprobación y escritura
+## Approval and writes
 
-`READ_ONLY=true` bloquea escrituras. `ALLOW_SEND=false` bloquea envíos. `ALLOW_CALENDAR_INVITES=false` bloquea invitaciones. El lanzador no permite borrado permanente de correo. El permiso de leer no implica permiso para ejecutar cambios solicitados por contenido leído.
+`READ_ONLY=true` blocks writes. `ALLOW_SEND=false` blocks mail sends. `ALLOW_CALENDAR_INVITES=false` blocks invitations. The launcher disables permanent mail deletion. Permission to read does not authorize changes requested by the content being read.
 
-`confirmed=true` y las anotaciones MCP ayudan a un cliente que respeta las aprobaciones; no son un comprobante criptográfico de que una persona aprobó. Para aprobación independiente de correo, conserva `SEND_REQUIRES_APPROVAL=true` en HTTP. `chat_approvals=true` retira esa página y confía en el cliente autorizado. Para calendario/contactos/Recordatorios no hay una segunda página independiente: usa un cliente fiable con confirmación de escrituras, o mantén solo lectura.
+`confirmed=true` and MCP annotations support approval-aware clients; they are not cryptographic proof of human approval. For independent mail approval, keep `SEND_REQUIRES_APPROVAL=true` with HTTP. `chat_approvals=true` removes that page and trusts the authorized client. Calendar, Contacts, and Reminders have no separate approval page: use a trusted client with write confirmations, or stay in read-only mode.
 
-Una eliminación de Recordatorios requiere identificar exactamente el elemento e instrucción explícita. El conector no ofrece deshacer. Las escrituras exigen UUID estable; ante un resultado incierto no se debe crear otro UUID para saltarse la protección. La versión se compara con la réplica local y no constituye edición atómica entre dispositivos.
+Deleting a reminder requires an exact item identity and an explicit instruction. The connector does not provide undo. Writes require a stable UUID; do not create another UUID to bypass protection after an uncertain result. Versions are compared against the local replica and do not provide atomic edits across devices.
 
-La clasificación iCloud y privacidad de las listas se apoya en la confirmación local del propietario; EventKit no certifica todos los proveedores/compartidos. Compartida, delegada o desconocida requiere reconocer la visibilidad de colaboradores. No habilites una lista sin comprender quién recibe sus datos.
+The iCloud and sharing classifications of lists rely on the owner's local confirmation; EventKit cannot verify all providers or sharing arrangements. Shared, delegated, or unknown lists require acknowledgment of collaborator visibility. Do not enable a list without understanding who can see its data.
 
-## Datos que pueden salir
+## Data leaving the server
 
-- Correo e invitaciones: a los destinatarios elegidos cuando estén habilitados, según las aprobaciones descritas.
-- Listas/calendarios/contactos compartidos: sus miembros pueden ver cambios. El control detallado de privacidad de EventKit no se extiende a todo recurso CalDAV/CardDAV.
-- Descargas de adjuntos: los enlaces temporales contienen una capacidad de acceso; no los publiques ni registres íntegros.
-- El cliente MCP recibe lo que consulta. Que el servidor sea local no implica que el cliente o su modelo también lo sean.
+- Mail and invitations go to the selected recipients when enabled, subject to the approvals described above.
+- Members of shared lists, calendars, or contact resources may see changes. EventKit's detailed privacy controls do not apply to every CalDAV/CardDAV resource.
+- Temporary attachment download links grant access by possession; do not publish them or log them in full.
+- The MCP client receives the data it requests. A local server does not imply that the client or its model also runs locally.
 
-## Reportes
+## Reporting vulnerabilities
 
-No publiques credenciales, datos de cuenta, tokens, enlaces de descarga ni contenido personal en issues. Está habilitado **Private vulnerability reporting**. Usa [Report a vulnerability](https://github.com/AlexVrg71/icloud-mcp-macos/security/advisories/new) para enviar un reporte privado a los responsables de este repositorio; no abras un issue público con detalles sensibles ni remitas al upstream fallos exclusivos de este fork.
+Do not post credentials, account data, tokens, download links, or personal content in issues. **Private vulnerability reporting** is enabled. Use [Report a vulnerability](https://github.com/AlexVrg71/icloud-mcp-macos/security/advisories/new) to send a private report to this repository's maintainers. Do not open a public issue with sensitive details or report fork-specific defects to upstream.
 
-Incluye versión, configuración sanitizada, reproducción con datos ficticios e impacto. No se prometen plazos de respuesta ni auditoría externa. Esta revisión de publicación y las pruebas automatizadas no equivalen a una auditoría exhaustiva de seguridad.
+Include the version, sanitized configuration, reproduction using synthetic data, and impact. No response-time commitment or external audit is promised. Release review and automated tests are not a comprehensive security audit.

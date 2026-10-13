@@ -14,10 +14,10 @@ async def main():
   assert tools['mail_get_attachment_download'].annotations.read_only_hint
   for n in ('calendar_update_event','calendar_delete_event'):
    assert 'following' in tools[n].input_schema['properties']
-  link=DownloadStore(d).create(b'\x00binary\xff','archivo ñ.pdf',s.public_url)['download_url'];token=link.rsplit('/',1)[1]
+  link=DownloadStore(d).create(b'\x00binary\xff','sample résumé.pdf',s.public_url)['download_url'];token=link.rsplit('/',1)[1]
   async with httpx.AsyncClient(transport=httpx.ASGITransport(app=build_app(s,m)),base_url='https://example.invalid') as c:
    r=await c.get('/downloads/'+token);assert r.status_code==200 and r.content==b'\x00binary\xff'
-   assert r.headers['cache-control']=='no-store' and '%C3%B1.pdf' in r.headers['content-disposition']
+   assert r.headers['cache-control']=='no-store' and 'r%C3%A9sum%C3%A9.pdf' in r.headers['content-disposition']
    assert (await c.get('/downloads/'+'x'*43)).status_code==404
    assert (await c.get('/mcp')).status_code==401
   print('PASS: catalog',len(tools),'tools; write approval annotations; following schema; download byte fidelity/headers/invalid link; MCP remains OAuth protected.')

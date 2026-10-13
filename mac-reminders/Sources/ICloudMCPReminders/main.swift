@@ -100,8 +100,8 @@ final class Delegate: NSObject, NSApplicationDelegate {
             menuItem = NSStatusBar.system.statusItem(withLength: NSStatusItem.variableLength)
             menuItem.button?.title = "iCloud MCP R"
             let menu = NSMenu()
-            menu.addItem(withTitle: "Configurar Recordatorios…", action: #selector(show), keyEquivalent: "").target = self
-            menu.addItem(withTitle: "Salir", action: #selector(quit), keyEquivalent: "q").target = self
+            menu.addItem(withTitle: "Configure Reminders…", action: #selector(show), keyEquivalent: "").target = self
+            menu.addItem(withTitle: "Quit", action: #selector(quit), keyEquivalent: "q").target = self
             menuItem.menu = menu
             refresh()
             if !CommandLine.arguments.contains("--background") || store.authorization == "not_determined" { show() }
@@ -112,31 +112,31 @@ final class Delegate: NSObject, NSApplicationDelegate {
     }
     func buildWindow() {
         window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 620, height: 500), styleMask: [.titled, .closable, .miniaturizable], backing: .buffered, defer: false)
-        window.title = "iCloud MCP — Recordatorios"; window.isReleasedWhenClosed = false; window.center()
+        window.title = "iCloud MCP — Reminders"; window.isReleasedWhenClosed = false; window.center()
         let stack = NSStackView(); stack.orientation = .vertical; stack.alignment = .leading; stack.spacing = 14
         stack.translatesAutoresizingMaskIntoConstraints = false; window.contentView!.addSubview(stack)
         NSLayoutConstraint.activate([stack.leadingAnchor.constraint(equalTo: window.contentView!.leadingAnchor, constant: 22), stack.trailingAnchor.constraint(equalTo: window.contentView!.trailingAnchor, constant: -22), stack.topAnchor.constraint(equalTo: window.contentView!.topAnchor, constant: 22)])
         status = NSTextField(wrappingLabelWithString: "")
         stack.addArrangedSubview(status)
-        stack.addArrangedSubview(NSTextField(wrappingLabelWithString: "Este auxiliar usa solo EventKit para Recordatorios. No solicita permisos desde el chat. Guardar en el Mac no confirma sincronización ni avisos en tus dispositivos."))
-        let access = NSButton(title: "Solicitar acceso a Recordatorios…", target: self, action: #selector(authorize)); stack.addArrangedSubview(access)
-        let reload = NSButton(title: "Consultar listas", target: self, action: #selector(refresh)); stack.addArrangedSubview(reload)
+        stack.addArrangedSubview(NSTextField(wrappingLabelWithString: "This helper uses EventKit for Reminders only. Permissions are requested locally, not in chat. Saving on the Mac does not confirm synchronization or notifications on your devices."))
+        let access = NSButton(title: "Request Reminders Access…", target: self, action: #selector(authorize)); stack.addArrangedSubview(access)
+        let reload = NSButton(title: "Refresh Lists", target: self, action: #selector(refresh)); stack.addArrangedSubview(reload)
         lists = NSPopUpButton(); lists.target = self; lists.action = #selector(selectionChanged); stack.addArrangedSubview(lists)
-        iCloud = NSButton(checkboxWithTitle: "Confirmo que esta lista pertenece a mi cuenta de iCloud", target: nil, action: nil); stack.addArrangedSubview(iCloud)
-        sharing = NSPopUpButton(); sharing.addItems(withTitles: ["No sé si se comparte", "Lista privada", "Lista compartida"]); stack.addArrangedSubview(sharing)
-        let bind = NSButton(title: "Guardar identificación de esta lista", target: self, action: #selector(bindList)); stack.addArrangedSubview(bind)
+        iCloud = NSButton(checkboxWithTitle: "I confirm this list belongs to my iCloud account", target: nil, action: nil); stack.addArrangedSubview(iCloud)
+        sharing = NSPopUpButton(); sharing.addItems(withTitles: ["Sharing status unknown", "Private list", "Shared list"]); stack.addArrangedSubview(sharing)
+        let bind = NSButton(title: "Save List Identification", target: self, action: #selector(bindList)); stack.addArrangedSubview(bind)
     }
     @objc func show() { window.makeKeyAndOrderFront(nil); NSApp.activate(ignoringOtherApps: true) }
     @objc func quit() { NSApp.terminate(nil) }
     @objc func authorize() {
-        let alert = NSAlert(); alert.messageText = "¿Permitir acceso completo a Recordatorios?"
-        alert.informativeText = "macOS concede lectura y escritura de todos tus recordatorios a esta app. El conector limita los cambios a las listas que identifiques como iCloud. Continúa solo si autorizaste ampliar el acceso de iCloud MCP."
-        alert.addButton(withTitle: "Continuar"); alert.addButton(withTitle: "Cancelar")
+        let alert = NSAlert(); alert.messageText = "Allow full access to Reminders?"
+        alert.informativeText = "macOS grants this app read and write access to all your reminders. The connector limits changes to lists you identify as iCloud. Continue only if you authorize expanding iCloud MCP access."
+        alert.addButton(withTitle: "Continue"); alert.addButton(withTitle: "Cancel")
         guard alert.runModal() == .alertFirstButtonReturn else { return }
         store.store.requestFullAccessToReminders { _, _ in DispatchQueue.main.async { self.refresh() } }
     }
     @objc func refresh() {
-        status.stringValue = "Acceso: \(store.authorization). Auxiliar local activo."
+        status.stringValue = "Access: \(store.authorization). Local helper running."
         guard store.authorization == "full_access" else { return }
         store.store.reset(); calendars = store.store.calendars(for: .reminder)
         lists.removeAllItems(); lists.addItems(withTitles: calendars.map { "\($0.title) — \($0.source.title) [\($0.calendarIdentifier.prefix(8))]" }); selectionChanged()
@@ -150,13 +150,13 @@ final class Delegate: NSObject, NSApplicationDelegate {
     @objc func bindList() {
         guard calendars.indices.contains(lists.indexOfSelectedItem) else { return }
         let c = calendars[lists.indexOfSelectedItem]
-        guard c.source.sourceType != .local || iCloud.state != .on else { status.stringValue = "EventKit identifica esta lista como local; no se puede marcar iCloud."; return }
+        guard c.source.sourceType != .local || iCloud.state != .on else { status.stringValue = "EventKit identifies this as a local list; it cannot be marked as iCloud."; return }
         var bindings = store.bindings()
         if iCloud.state == .on {
             bindings[c.calendarIdentifier] = ["source_id": c.source.sourceIdentifier, "kind": "icloud", "sharing": ["unknown", "private", "shared"][sharing.indexOfSelectedItem]]
         } else { bindings.removeValue(forKey: c.calendarIdentifier) }
-        do { try durableWrite(try canonical(bindings), to: store.root.appendingPathComponent("lists.json")); status.stringValue = "Identificación guardada. No se modificó ningún recordatorio." }
-        catch { status.stringValue = "No se pudo guardar la identificación; no se habilitó esa lista." }
+        do { try durableWrite(try canonical(bindings), to: store.root.appendingPathComponent("lists.json")); status.stringValue = "List identification saved. No reminders were changed." }
+        catch { status.stringValue = "Could not save list identification; the list was not enabled." }
     }
 }
 

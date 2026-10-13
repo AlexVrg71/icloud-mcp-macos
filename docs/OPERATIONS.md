@@ -1,48 +1,48 @@
-# Operación de la edición pública
+# Operating the public edition
 
-## Archivos y secretos
+## Files and secrets
 
-Todo el estado de esta edición vive bajo `~/Library/Application Support/iCloud-MCP-macOS`:
+All state for this edition lives under `~/Library/Application Support/iCloud-MCP-macOS`:
 
-- `.venv/`, `manage.py`, `bin/`, `apps/`: programa instalado.
-- `config.json`: configuración privada 0600 (cuenta, zona, URL, puerto y políticas); nunca contraseñas. Copia la estructura de `defaults()` si necesitas compararla. No agregues variables arbitrarias.
-- `data/`: tokens OAuth, recibos de operaciones, respaldos vCard, recuperación de calendarios y adjuntos temporales. Puede contener datos personales completos. No subirlo a GitHub.
-- `data/eventkit/`: socket 0600, identificación de listas y recibos duraderos de mutaciones. No borrar recibos pendientes para forzar un reintento.
-- `logs/`: diagnósticos privados, no adjuntar sin revisión.
+- `.venv/`, `manage.py`, `bin/`, `apps/`: installed software.
+- `config.json`: private configuration, mode 0600, containing the account, time zone, URL, port, and policies; never passwords. Refer to the structure of `defaults()` when comparing it. Do not add arbitrary variables.
+- `data/`: OAuth tokens, operation receipts, vCard backups, calendar recovery data, and temporary attachments. It may contain complete personal records. Do not upload it to GitHub.
+- `data/eventkit/`: a mode-0600 socket, list identification, and durable mutation receipts. Do not delete pending receipts to force a retry.
+- `logs/`: private diagnostics; review before sharing.
 
-Keychain usa servicios `icloud-mcp-macos.apple` y `icloud-mcp-macos.oauth` con la cuenta configurada. Son elementos genéricos del llavero, consultables con Acceso a Llaveros. No se guardan en la app Contraseñas como credenciales de un sitio web. La utilidad nativa guarda el secreto recibido por stdin con Security.framework; no usa contraseña en argv ni un archivo temporal. El lanzador recupera OAuth sin imprimirlo y lo entrega al servidor en su entorno de proceso. El servidor lee la contraseña de Apple del Keychain. Esto no protege frente a malware ejecutándose con los permisos del propietario.
+Keychain uses the services `icloud-mcp-macos.apple` and `icloud-mcp-macos.oauth` with the configured account. These are generic Keychain items, viewable in Keychain Access. They are not website credentials stored in the Passwords app. The native utility receives the secret through stdin and saves it using Security.framework, without putting it in command-line arguments or temporary files. The launcher retrieves the OAuth password without printing it and passes it in the server's process environment. The server reads the Apple password from Keychain. This does not protect against malware running with the owner's privileges.
 
-`python3 scripts/manage.py rotate-credentials` permite introducir sustitutos desde Terminal. No crea ni revoca contraseñas en Apple: hazlo en tu Apple Account. Para añadir HTTP a una configuración que era solo stdio, detén el servidor, añade tu `public_url` a `config.json`, ejecuta `rotate-credentials` para guardar también OAuth y arranca de nuevo. Cambiar la contraseña del propietario no invalida por sí solo todos los tokens OAuth ya emitidos.
+`python3 scripts/manage.py rotate-credentials` prompts for replacements in Terminal. It does not create or revoke Apple passwords: manage those in your Apple Account. To add HTTP to a stdio-only configuration, stop the server, add your `public_url` to `config.json`, run `rotate-credentials` to save the OAuth password as well, then restart. Changing the owner password alone does not invalidate all previously issued OAuth tokens.
 
-Para revocar sesiones, detén el servidor y retira de forma privada `data/oauth_state.json` (perderás los clientes/tokens guardados); al arrancar será necesario reconectar. Antes verifica el archivo y conserva un respaldo si necesitas investigar un incidente. No copies tokens a issues.
+To revoke sessions, stop the server and privately remove `data/oauth_state.json` (this discards saved clients/tokens); clients must reconnect after startup. Verify the file first and preserve a backup if you need to investigate an incident. Do not copy tokens into issues.
 
-## Arranque y parada
+## Starting and stopping
 
 ```sh
-python3 scripts/manage.py start --helper  # habilita EventKit al iniciar sesión
-python3 scripts/manage.py start           # habilita servidor HTTP al iniciar sesión
-python3 scripts/manage.py stop            # detiene y retira solo el agente HTTP público
-python3 scripts/manage.py stop --helper   # detiene y retira solo el agente EventKit público
+python3 scripts/manage.py start --helper  # enable EventKit helper at login
+python3 scripts/manage.py start           # enable HTTP server at login
+python3 scripts/manage.py stop            # stop and remove only this edition's HTTP agent
+python3 scripts/manage.py stop --helper   # stop and remove only this edition's EventKit agent
 ```
 
-Etiquetas: `org.icloudmcp.macos.server` y `org.icloudmcp.macos.reminders`. Si solo usas stdio, tu cliente gestiona el servidor; no ejecutes `start` HTTP. Usa un solo proceso de servidor de esta edición con escrituras para evitar carreras entre recibos/respaldos; varias conexiones remotas al mismo servidor sí son normales. El auxiliar impide que dos procesos abran el mismo socket.
+Labels: `org.icloudmcp.macos.server` and `org.icloudmcp.macos.reminders`. With stdio, your client manages the server; do not run HTTP `start`. Use only one write-enabled server process for this edition to avoid races involving receipts and backups; multiple remote connections to that server are expected. The helper prevents two processes from opening the same socket.
 
-Los scripts rechazan reemplazar destinos o agentes existentes. Un fallo de instalación puede dejar un directorio parcial sin servicios; inspecciónalo antes de moverlo o retirarlo. Un fallo de bootstrap puede dejar el archivo LaunchAgent; `stop` permite retirarlo tras comprobar que no está cargado. No se ofrece un borrado automático de datos o Keychain.
+The scripts refuse to replace existing destinations or agents. A failed installation may leave a partial directory without services; inspect it before moving or removing it. A bootstrap failure may leave a LaunchAgent file; `stop` can remove it after verifying it is not loaded. There is no automatic deletion of data or Keychain items.
 
-## Políticas y cambios de configuración
+## Policies and configuration changes
 
-`read_only=true` omite herramientas de escritura. Para activar escrituras en una instalación configurada, detén servidor/clientes, edita el booleano a `false`, y reinicia/refresca el catálogo. `allow_send`, `allow_calendar_invites` y `chat_approvals` son opciones independientes. Mantén aprobación de cambios en el cliente; `chat_approvals=true` solo retira la segunda página de aprobación del correo, no autentica cada intención del usuario.
+`read_only=true` omits write tools. To enable writes in a configured installation, stop the server/clients, set that boolean to `false`, then restart and refresh the catalog. `allow_send`, `allow_calendar_invites`, and `chat_approvals` are independent options. Keep change approval enabled in the client; `chat_approvals=true` only removes the second mail approval page and does not authenticate each user instruction.
 
-Las opciones heredadas que no aparecen en `config.json` no se heredan del entorno del shell. El lanzador deshabilita los auxiliares amplios y el API de administración. No añadas contraseñas a `config.json` ni habilites overrides con secretos en disco.
+Legacy options absent from `config.json` are not inherited from the shell environment. The launcher disables broader helpers and the administration API. Do not add passwords to `config.json` or enable overrides that store secrets on disk.
 
-## Actualización y retirada
+## Updating and removal
 
-Esta beta **no tiene actualizador automático**. No reemplaces una instalación activa sobre la marcha. Conserva código/versión anterior y respaldo privado del directorio, detén clientes y ambos agentes, y prepara la siguiente versión por separado. El instalador no migra instalaciones anteriores; una actualización debe incluir instrucciones de migración revisadas. Sustituir una app firmada ad hoc puede exigir conceder de nuevo el permiso de Recordatorios. No resetees TCC ni desactives Gatekeeper para evitarlo.
+This beta **has no automatic updater**. Do not replace an active installation while it is running. Retain the previous source/version and a private directory backup, stop clients and both agents, and prepare the next version separately. The installer does not migrate previous installations; an update needs reviewed migration instructions. Replacing an ad hoc signed app may require granting Reminders access again. Do not reset TCC or disable Gatekeeper to bypass this.
 
-Para retirar esta edición, primero detén clientes stdio y usa ambos comandos `stop`. Revoca el permiso de Recordatorios desde Ajustes del Sistema si lo deseas. Retira después la app, datos y entradas del Keychain de esta edición manualmente, solo tras decidir qué respaldos conservar. No elimines agentes ni rutas de otros servicios.
+To remove this edition, first stop stdio clients and run both `stop` commands. Revoke Reminders permission in System Settings if desired. Then manually remove this edition's app, data, and Keychain entries after deciding which backups to retain. Do not remove other services' agents or paths.
 
-## Retención y recuperación
+## Retention and recovery
 
-Los respaldos de contactos, manifiestos de división de calendario y recibos de Recordatorios no tienen limpieza automática. Pueden crecer y contienen datos privados. Respáldalos cifrados y define una retención manual. Eliminar recibos pierde protección frente a reintentos antiguos. Recuperar un respaldo requiere revisión; no hay restauración universal automática.
+Contact backups, calendar split manifests, and Reminders receipts have no automatic cleanup. They can grow and contain private data. Keep encrypted backups and define a manual retention policy. Deleting receipts removes protection against old retries. Restoring a backup requires review; there is no universal automatic restore.
 
-Ante un resultado incierto, lee/busca primero. No repitas una creación con otro `request_id`; conserva el UUID y argumentos originales. En un cambio recurrente CalDAV pueden existir dos recursos: la división no es atómica; consulta ambos antes de resolverla.
+After an uncertain result, read or search first. Do not repeat a creation with another `request_id`; retain the original UUID and arguments. A recurring CalDAV change can involve two resources: splitting is not atomic, so inspect both before resolving the result.
