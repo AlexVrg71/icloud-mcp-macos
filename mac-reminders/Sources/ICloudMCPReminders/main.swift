@@ -43,13 +43,15 @@ final class LocalSocket {
                     let n = Darwin.read(client, &buffer, buffer.count)
                     if n <= 0 { break }; data.append(contentsOf: buffer.prefix(n))
                 }
+                // Freeze the received bytes before crossing to the main actor.
+                let requestData = data
                 let done = DispatchSemaphore(value: 0)
                 DispatchQueue.main.async {
                     Task { @MainActor in
                         let reply: [String: Any]
                         do {
-                            guard data.count <= 65536, data.last == 10 else { throw Failure("invalid_request", "A bounded JSON line is required.") }
-                            let request = try Request.decode(data)
+                            guard requestData.count <= 65536, requestData.last == 10 else { throw Failure("invalid_request", "A bounded JSON line is required.") }
+                            let request = try Request.decode(requestData)
                             reply = ["ok": true, "result": try await store.execute(request)]
                         } catch let failure as Failure {
                             reply = ["ok": false, "error": ["code": failure.code, "message": failure.message]]
