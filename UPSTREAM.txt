@@ -1,0 +1,17 @@
+Upstream: https://github.com/epinethrone/icloud-mcp
+Upstream base commit: 7826ea335c7a6f85b0292b4a3a3e97b9ed5e5d08
+Upstream base version: 0.12.1
+Public fork distribution: icloud-mcp-macos 0.1.0b1
+License: MIT; preserve upstream copyright and THIRD_PARTY_NOTICES.md.
+
+Fork changes: OAuth/public URL prefix support; automatic contact/group vCard backups;
+all-folder transitive email threads; temporary attachment download capabilities;
+recurring event range editing and splitting with recovery; imported-invitation iMIP
+replies with duplicate/uncertainty protection; optional EventKit Reminders helper;
+portable macOS installer, isolated identity/state, Keychain setup, public documentation
+and synthetic tests.
+
+The public snapshot intentionally excludes private deployment history, operational
+records, account data, credentials and device-validation evidence. It is not an
+upstream release and should not be reported as one. The provenance commit above
+identifies the original source, not a private user's installation.

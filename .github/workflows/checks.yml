@@ -1,0 +1,23 @@
+name: Synthetic checks
+on: [push, pull_request, workflow_dispatch]
+permissions:
+  contents: read
+jobs:
+  public-beta:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -c constraints.txt .
+      - run: python scripts/check_public_tree.py
+      - run: python -m unittest discover -s tests -v
+      - run: python scripts/check_oauth.py
+      - run: python scripts/check_http.py
+      - run: swift test
+        working-directory: mac-reminders
+      - run: ./build-app.sh
+        working-directory: mac-reminders
+      - run: swiftc scripts/keychain.swift -o /tmp/icloud-mcp-keychain-check
+# Never install, launch, access Keychain or authorize EventKit in CI.

@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0"><dict>
+<key>CFBundleExecutable</key><string>ICloudMCPReminders</string>
+<key>CFBundleIdentifier</key><string>org.icloudmcp.macos.reminders</string>
+<key>CFBundleName</key><string>iCloud MCP Reminders</string>
+<key>CFBundleDisplayName</key><string>iCloud MCP Reminders</string>
+<key>CFBundlePackageType</key><string>APPL</string>
+<key>CFBundleVersion</key><string>1</string>
+<key>CFBundleShortVersionString</key><string>1.0.0</string>
+<key>LSMinimumSystemVersion</key><string>14.0</string>
+<key>LSUIElement</key><true/>
+<key>NSRemindersFullAccessUsageDescription</key><string>iCloud MCP necesita leer y gestionar tus recordatorios cuando se lo pides en el chat. Los cambios se limitan a las listas que identifiques como iCloud.</string>
+<key>NSRemindersUsageDescription</key><string>iCloud MCP necesita leer y gestionar tus recordatorios cuando se lo pides en el chat.</string>
+</dict></plist>
