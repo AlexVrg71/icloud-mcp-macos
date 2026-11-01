@@ -24,44 +24,96 @@ This edition does not install or expose the Notes, Messages, Drive, Maps, Health
 
 The installer resolves your home directory automatically; it requires neither Homebrew nor a fixed username. It creates a separate installation at `~/Library/Application Support/iCloud-MCP-macOS`, with its own identifiers and Keychain entries. It does not migrate or replace another installation. If the destination already exists, it stops.
 
-## Local installation
+## Choose your connection before configuring
 
-Clone the [public repository](https://github.com/AlexVrg71/icloud-mcp-macos) and review the scripts before running them:
+| Where you will use it | Connection | Continue with |
+| --- | --- | --- |
+| Claude Desktop on this Mac | Local stdio; no public endpoint or OAuth | [Local setup](#local-setup-claude-desktop) |
+| ChatGPT, or Claude through a remote connector | HTTPS + OAuth to this Mac | [Remote setup](docs/REMOTE.md) |
+
+**Choose one route. Run `install` once and `configure` once.** The local and remote commands are alternatives, not consecutive steps. Already configured? Use [switching from local to remote](docs/REMOTE.md#switching-an-existing-local-installation-to-remote); rerunning `configure` deliberately fails.
+
+Before installing, check that your client/account lets you add a custom MCP server. Workspace policies can restrict access. GitHub publication does not automatically list or install this connector in ChatGPT or Claude.
+
+If you only need iCloud Mail and Calendar in ChatGPT, consider OpenAI's built-in plugins first. This project's additional reasons to self-host include EventKit Reminders, contact editing with backups, and a portable MCP endpoint. See the [dated feature comparison](docs/NATIVE-ICLOUD-COMPARISON.md).
+
+## Prepare the Mac — both routes
+
+1. Confirm macOS 14+ and check the tools in Terminal:
+
+   ```sh
+   sw_vers -productVersion
+   python3 --version
+   swift --version
+   git --version
+   ```
+
+   Python must be 3.11+. Install a suitable Python from [python.org](https://www.python.org/downloads/macos/) if needed. Install Apple's Command Line Tools with `xcode-select --install` if Swift/Git are missing, then reopen Terminal and repeat the checks. Do not use `sudo` for this project's commands.
+
+2. Enable the iCloud services you intend to use. For Reminders, sign into iCloud on this Mac, enable Reminders synchronization, and confirm your iCloud lists appear in Apple's Reminders app. A local list is not an iCloud list.
+
+3. Generate an app-specific password in [Apple Account → Sign-In and Security → App-Specific Passwords](https://support.apple.com/en-us/102654). Apple requires two-factor authentication. Keep this password outside chat and use it only in the hidden Terminal prompt. The remote route also asks you to create a **different OAuth owner password**, at least 12 characters long.
+
+4. Clone the source and review it:
+
+   ```sh
+   git clone https://github.com/AlexVrg71/icloud-mcp-macos.git
+   cd icloud-mcp-macos
+   python3 scripts/manage.py install --enable-reminders
+   ```
+
+   This creates a separate Python environment, installs dependencies with `constraints.txt`, and compiles the helper. It does not start services or request permissions. To omit Reminders, omit `--enable-reminders` from both `install` and your chosen `configure` command, and skip helper steps throughout the guide.
+
+Keep Terminal in the cloned directory for subsequent commands. If installation reports an existing destination, inspect it using [operations guidance](docs/OPERATIONS.md); do not delete a working installation to retry.
+
+## Local setup: Claude Desktop
+
+After the preparation above, configure local access:
 
 ```sh
-git clone https://github.com/AlexVrg71/icloud-mcp-macos.git
-cd icloud-mcp-macos
-```
-
-Install from that directory:
-
-```sh
-python3 scripts/manage.py install --enable-reminders
 python3 scripts/manage.py configure --enable-reminders
 ```
 
-The first command creates the Python environment, installs dependencies using `constraints.txt`, and builds the helper. **It does not start services or grant permissions.** The second prompts for your account, IANA time zone, and app-specific password, entered twice with hidden input. Secrets are stored as generic macOS Keychain items; they may not appear in the Passwords app. Do not paste them into chats, shell arguments, issues, or configuration files.
+Enter the Apple Account, an IANA time zone such as `America/Mexico_City`, and the app-specific password twice with hidden input. This starts in **read-only mode**. To enable changes during initial configuration, add `--allow-writes`; sending mail and invitations separately require `--allow-send` and `--allow-invites`. Decide before executing the command; later changes use [configuration policies](docs/OPERATIONS.md#policies-and-configuration-changes).
 
-The default mode is **read-only**. To enable changes during setup, add `--allow-writes` to `configure`. Sending mail and calendar invitations separately require `--allow-send` and `--allow-invites`. Permanent mail deletion remains disabled.
+Secrets are generic Keychain items, viewable in Keychain Access; they may not appear in the Passwords app. Approve macOS Keychain access only for the installed program you intended to run.
 
-When you are ready to enable persistent Reminders access:
+If Reminders is enabled, complete [Reminders permissions](#reminders-permissions) below. Then generate the local client configuration:
+
+```sh
+python3 scripts/manage.py client-config
+```
+
+In Claude Desktop's macOS menu, open **Settings → Developer → Edit Config**. Merge the generated `icloud-mcp-macos` entry into `mcpServers` in `~/Library/Application Support/Claude/claude_desktop_config.json`. Preserve existing entries and other settings; do not paste a second top-level JSON object. Use the generated absolute paths, not `~` placeholders. Fully quit and reopen Claude Desktop, then check that this server's tools appear. See the [official local MCP guide](https://modelcontextprotocol.io/docs/develop/connect-local-servers) if the UI has changed.
+
+Claude launches the stdio server; **do not run `start` for the HTTP server on this route**. This local configuration is separate from Claude's account-level remote connectors. It is not a ChatGPT import file. It contains local paths but no passwords; do not publish it. Start with [read-only validation](#first-connection-validation).
+
+## Reminders permissions
+
+Only if you installed and configured Reminders, run:
 
 ```sh
 python3 scripts/manage.py start --helper
 python3 scripts/manage.py open-reminders
 ```
 
-In the local window, request access and accept the macOS prompt. Select each list, confirm that it belongs to iCloud, identify its sharing status, and save. You do not need to create a reminder. Apple's permission covers all lists; the helper restricts writes. The iCloud/private/shared labels are supplied by the owner because EventKit cannot automatically verify all of these classifications.
+`start --helper` enables this helper at login. Do not repeat it if already running. In the local window:
 
-Generate the configuration for a local client:
+1. Click **Request Reminders Access…**, review the explanation, and grant access in macOS.
+2. Click **Refresh Lists**, select an iCloud list, check **I confirm this list belongs to my iCloud account**, choose its sharing status, and click **Save List Identification**.
+3. Repeat for each list you want writable. No reminder needs to be created.
 
-```sh
-python3 scripts/manage.py client-config
-```
+Apple grants access to all Reminders lists; the helper limits writes to those you identify as iCloud. Classification and sharing labels are owner declarations, not automatically verified by EventKit. If permission was denied, review **System Settings → Privacy & Security → Reminders**. Do not reset system privacy controls. Server read-only mode still blocks writes even after a list is enabled.
 
-Copy that JSON into your client's MCP configuration. It uses stdio without a public port or OAuth; stdout is reserved for the protocol. A local client with access to the process is trusted within your user session. The configuration contains local paths but no passwords: do not publish your generated JSON.
+## First connection validation
 
-For ChatGPT, Claude, or another cloud MCP client, follow the [HTTPS and OAuth setup](docs/REMOTE.md). Do not use someone else's endpoint.
+Select this connector explicitly and ask:
+
+> Use iCloud MCP for macOS to run icloud_check_health. List mail folders, calendars, and Reminders lists, and check Reminders permission. Do not create, send, edit, mark, or delete anything.
+
+Check that enabled areas report success, the expected account/lists are present, and Reminders reports access if enabled. Reading real data requires your own connected account; synthetic tests alone do not establish this result. A successful connection with no write tools is expected in read-only mode.
+
+For write access, follow [configuration policies](docs/OPERATIONS.md#policies-and-configuration-changes), restart the relevant process, refresh the client's tools, and keep write approval enabled. Only test a write after explicitly authorizing a specific disposable object. Read it back and separately authorize cleanup. Creating a reminder locally, seeing it on iPhone/Watch, and receiving its alert are three distinct checks.
 
 ## Approvals
 

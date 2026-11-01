@@ -29,3 +29,7 @@ Update this document and `CHANGELOG.md` for each release. Do not remove the beta
 - Source review and hygiene check: no outstanding findings. This does not certify that all possible secrets are absent.
 
 `python3 scripts/package_source.py` generates a source ZIP in `dist/` with an internal `SHA256SUMS` file. It excludes `.git`, environments, executables, logs, and runtime data. Share that archive rather than a ZIP of the entire working directory.
+
+## Documentation review — November 1, 2026
+
+Local/remote onboarding is now separated before configuration, with a concrete HTTPS route, client-specific connection steps, and migration without repeated setup. Commands were checked against the installer; synthetic tests cover server behavior. Native iCloud plugin capabilities were inspected without connecting an account. This documentation update does not establish a fresh live connection in ChatGPT or Claude, a clean install on another Mac, or delivery to an iPhone/Watch.

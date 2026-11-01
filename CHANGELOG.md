@@ -1,5 +1,11 @@
 # Changelog
 
+## Documentation update — 2026-11-01
+
+- Separate local and remote onboarding before initial configuration.
+- Add a dedicated-host Tailscale Funnel walkthrough, OAuth checks, client setup, and existing-install migration.
+- Document first-connection validation, troubleshooting, and current native iCloud plugin capabilities without claiming unperformed live tests.
+
 ## 0.1.0b1 — public source beta
 
 - Independent name: iCloud MCP for macOS (`icloud-mcp-macos`), for MCP clients with or without a Dot.
