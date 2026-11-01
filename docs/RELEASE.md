@@ -33,3 +33,5 @@ Update this document and `CHANGELOG.md` for each release. Do not remove the beta
 ## Documentation review — November 1, 2026
 
 Local/remote onboarding is now separated before configuration, with a concrete HTTPS route, client-specific connection steps, and migration without repeated setup. Commands were checked against the installer; synthetic tests cover server behavior. Native iCloud plugin capabilities were inspected without connecting an account. This documentation update does not establish a fresh live connection in ChatGPT or Claude, a clean install on another Mac, or delivery to an iPhone/Watch.
+
+GitHub cancelled the initial November 1 documentation run during its scheduled [macOS 14 runner brownout](https://github.com/actions/runner-images/issues/13518). CI now targets `macos-15`; this changes the hosted test environment, not the app deployment target. Current CI therefore does not continuously exercise macOS 14 itself.

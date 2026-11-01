@@ -1,7 +1,8 @@
 # Changelog
 
-## Documentation update — 2026-11-01
+## Documentation and CI update — 2026-11-01
 
+- Move synthetic CI to macOS 15 because GitHub is retiring its macOS 14 runners; the application minimum remains macOS 14.
 - Separate local and remote onboarding before initial configuration.
 - Add a dedicated-host Tailscale Funnel walkthrough, OAuth checks, client setup, and existing-install migration.
 - Document first-connection validation, troubleshooting, and current native iCloud plugin capabilities without claiming unperformed live tests.
